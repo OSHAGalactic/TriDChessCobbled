@@ -1,0 +1,1 @@
+print("Tri-D Chess is alive!")
