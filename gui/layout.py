@@ -1,28 +1,13 @@
 """
 layout.py
 
-Calculates where each board appears on screen.
+Defines the visual placement of all Tri-D Chess boards.
 
-Contains no pygame code.
+This file contains no rendering logic.
 """
 
 from dataclasses import dataclass
-
-from gui.colors import (
-    WHITE_BOARD,
-    BLACK_BOARD,
-    NEUTRAL_BOARD,
-)
-
-
-@dataclass
-class Rect:
-
-    x: float
-    y: float
-    width: float
-    height: float
-
+from pygame import Rect
 
 
 @dataclass
@@ -31,161 +16,191 @@ class BoardVisual:
     name: str
     rect: Rect
     color: tuple
-    size: int
+    size: int = 4
 
 
 
 class StandardLayout:
 
+
     def __init__(self):
 
-        self.boards = {}
+        self.visuals = {}
+
 
 
     def build(self, width, height):
 
-        self.boards.clear()
+        self.visuals.clear()
 
 
-        tile = min(width, height) / 18
+        # -----------------------------------------
+        # Board sizing
+        # -----------------------------------------
 
-        main_size = tile * 4
+        gap = 20
 
-        attack_size = tile * 2
+        board_size = min(
+            width * 0.22,
+            height * 0.22,
+        )
 
-        gap = tile
+        board_size = int(board_size)
 
-        center_x = width / 2
+        attack_size = board_size // 2
 
-        center_y = height / 2
-
-
-        main_x = center_x - main_size / 2
+        center_x = width // 2
 
 
-        #
+        total_height = (
+            board_size * 3
+            +
+            gap * 2
+        )
+
+
+        top = (
+            height - total_height
+        ) // 2
+
+
+
+        # -----------------------------------------
         # Main boards
-        #
+        # -----------------------------------------
 
-        wl_y = center_y + main_size * 1.25
-
-        nl_y = center_y - main_size / 2
-
-        bl_y = center_y - main_size * 2.25
+        x = center_x - board_size // 2
 
 
-        self.boards["WL"] = BoardVisual(
-            "WL",
-            Rect(
-                main_x,
-                wl_y,
-                main_size,
-                main_size,
-            ),
-            WHITE_BOARD,
-            4,
-        )
-
-
-        self.boards["NL"] = BoardVisual(
-            "NL",
-            Rect(
-                main_x,
-                nl_y,
-                main_size,
-                main_size,
-            ),
-            NEUTRAL_BOARD,
-            4,
-        )
-
-
-        self.boards["BL"] = BoardVisual(
+        self.visuals["BL"] = BoardVisual(
             "BL",
             Rect(
-                main_x,
-                bl_y,
-                main_size,
-                main_size,
+                x,
+                top,
+                board_size,
+                board_size,
             ),
-            BLACK_BOARD,
-            4,
+            (155,80,80),
         )
 
 
-        #
+        self.visuals["NL"] = BoardVisual(
+            "NL",
+            Rect(
+                x,
+                top + board_size + gap,
+                board_size,
+                board_size,
+            ),
+            (130,130,130),
+        )
+
+
+        wl_y = top + (board_size + gap) * 2
+
+
+        self.visuals["WL"] = BoardVisual(
+            "WL",
+            Rect(
+                x,
+                wl_y,
+                board_size,
+                board_size,
+            ),
+            (90,150,95),
+        )
+
+
+
+        # -----------------------------------------
         # Attack boards
         #
+        # Attached to corners of main boards,
+        # shifted by one game tile:
+        #
+        # Left boards: move left 1 tile
+        # Right boards: move right 1 tile
+        # Black boards: move up 1 tile
+        # White boards: move down 1 tile
+        # -----------------------------------------
 
-        horizontal_offset = main_size + gap
-
-
-        self.boards["WKL"] = BoardVisual(
-            "WKL",
-            Rect(
-                main_x - attack_size - horizontal_offset,
-                wl_y + main_size + gap,
-                attack_size,
-                attack_size,
-            ),
-            WHITE_BOARD,
-            2,
-        )
+        tile = attack_size // 2
 
 
-        self.boards["WQL"] = BoardVisual(
-            "WQL",
-            Rect(
-                main_x + main_size + horizontal_offset,
-                wl_y + main_size + gap,
-                attack_size,
-                attack_size,
-            ),
-            WHITE_BOARD,
-            2,
-        )
+        # Black attack boards
 
-
-        self.boards["BKL"] = BoardVisual(
+        self.visuals["BKL"] = BoardVisual(
             "BKL",
             Rect(
-                main_x - attack_size - horizontal_offset,
-                bl_y - attack_size - gap,
+                x - attack_size - tile,
+                top - tile,
                 attack_size,
                 attack_size,
             ),
-            BLACK_BOARD,
-            2,
+            (155,80,80),
+            size=2,
         )
 
 
-        self.boards["BQL"] = BoardVisual(
+        self.visuals["BQL"] = BoardVisual(
             "BQL",
             Rect(
-                main_x + main_size + horizontal_offset,
-                bl_y - attack_size - gap,
+                x + board_size + tile,
+                top - tile,
                 attack_size,
                 attack_size,
             ),
-            BLACK_BOARD,
-            2,
+            (155,80,80),
+            size=2,
         )
 
 
-        return self.boards
+                # White attack boards
+        #
+        # Moved up 2 game squares
+
+        self.visuals["WKL"] = BoardVisual(
+            "WKL",
+            Rect(
+                x - attack_size - tile,
+                wl_y + board_size - tile,
+                attack_size,
+                attack_size,
+            ),
+            (90,150,95),
+            size=2,
+        )
+
+
+        self.visuals["WQL"] = BoardVisual(
+            "WQL",
+            Rect(
+                x + board_size + tile,
+                wl_y + board_size - tile,
+                attack_size,
+                attack_size,
+            ),
+            (90,150,95),
+            size=2,
+        )
+
+
+        return self.visuals
 
 
 
     def get(self, name):
 
-        return self.boards[name]
+        return self.visuals[name]
+
+
+
+    def board(self, name):
+
+        return self.visuals[name]
 
 
 
     def all(self):
 
-        return self.boards.values()
-
-    def get(self, name):
-
-        return self.boards[name]
+        return self.visuals.values()
