@@ -11,6 +11,8 @@ from gui.colors import (
     LIGHT_SQUARE,
     DARK_SQUARE,
     TEXT,
+    WHITE_PIECE,
+    BLACK_PIECE,
 )
 
 from gui.piece_symbols import get_symbol
@@ -227,10 +229,23 @@ class Renderer:
             )
 
 
+            #
+            # Choose piece color
+            #
+
+            if piece.color.name == "WHITE":
+
+                piece_color = WHITE_PIECE
+
+            else:
+
+                piece_color = BLACK_PIECE
+
+
             symbol = self.piece_font.render(
                 get_symbol(piece),
                 True,
-                TEXT,
+                piece_color,
             )
 
 
