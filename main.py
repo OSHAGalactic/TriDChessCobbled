@@ -5,9 +5,9 @@ import pygame
 from constants import *
 
 from engine.board import Board
+from engine.setup import setup_starting_position
 
 from gui.layout import StandardLayout
-
 from gui.renderer import Renderer
 
 
@@ -36,6 +36,11 @@ def main():
 
     board = Board()
 
+    setup_starting_position(
+        board
+    )
+
+
     layout = StandardLayout()
 
     layout.build(
@@ -56,6 +61,7 @@ def main():
 
 
         for event in pygame.event.get():
+
 
             if event.type == pygame.QUIT:
 
