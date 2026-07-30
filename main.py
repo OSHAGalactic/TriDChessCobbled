@@ -3,6 +3,7 @@ import sys
 import pygame
 
 from constants import *
+from engine.board import Board
 
 
 def main():
@@ -17,6 +18,10 @@ def main():
     pygame.display.set_caption(TITLE)
 
     clock = pygame.time.Clock()
+
+    board = Board()
+
+    print(board)
 
     running = True
 
