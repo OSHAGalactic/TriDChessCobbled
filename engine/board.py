@@ -1,73 +1,75 @@
 """
 board.py
 
-Core board representation for Star Trek Tri-D Chess.
+Core board model for Star Trek Tri-D Chess.
 
-This module owns the logical geometry of the board.
+The Board owns:
+    • Every physical square
+    • Every attack platform
+    • Current platform locations
 
-It DOES NOT know anything about graphics.
+Rendering is handled elsewhere.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict, Optional, List
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional
 
-from .coordinate import (
-    Coordinate,
-    MAIN_BOARDS,
-    ATTACK_BOARDS,
-    FILES,
-    RANKS,
-)
+from .coordinate import Coordinate, FILES, RANKS
 
 
-# ==========================================================
+MAIN_BOARDS = ("WL", "NL", "BL")
+
+
+# ---------------------------------------------------------
 # Square
-# ==========================================================
+# ---------------------------------------------------------
 
 @dataclass
 class Square:
-    """
-    Represents one physical square.
-
-    Piece support will be added later.
-    """
-
     coordinate: Coordinate
     piece: Optional[object] = None
 
 
-# ==========================================================
+# ---------------------------------------------------------
 # Attack Platform
-# ==========================================================
+# ---------------------------------------------------------
 
 @dataclass
 class AttackPlatform:
     """
-    Logical representation of a movable attack board.
+    Represents one movable 2×2 attack platform.
 
-    Only stores where the platform is attached.
+    The platform's four logical squares are always:
 
-    Rotation and movement rules will be added later.
+        A1 A2
+        B1 B2
+
+    Rotation determines which physical corner each maps to.
     """
 
     name: str
 
-    # Pin coordinate on a MAIN board.
-
+    # Which main board currently hosts this platform.
     host_board: str
 
-    file: str
-
-    rank: int
+    # Which corner pin it is attached to.
+    pin_file: str
+    pin_rank: int
 
     rotated: bool = False
 
+    moved: bool = False
 
-# ==========================================================
+    def rotate(self):
+
+        self.rotated = not self.rotated
+
+
+# ---------------------------------------------------------
 # Board
-# ==========================================================
+# ---------------------------------------------------------
 
 class Board:
 
@@ -75,15 +77,13 @@ class Board:
 
         self.squares: Dict[Coordinate, Square] = {}
 
-        self.attack_platforms: Dict[str, AttackPlatform] = {}
+        self.platforms: Dict[str, AttackPlatform] = {}
 
         self._create_main_boards()
 
-        self._create_attack_boards()
+        self._create_platforms()
 
-        self._initialize_platform_positions()
-
-    # ------------------------------------------------------
+    # -------------------------------------------------
 
     def _create_main_boards(self):
 
@@ -93,164 +93,102 @@ class Board:
 
                 for rank in RANKS:
 
-                    coord = Coordinate(board, file, rank)
+                    c = Coordinate(board, file, rank)
 
-                    self.squares[coord] = Square(coord)
+                    self.squares[c] = Square(c)
 
-    # ------------------------------------------------------
+    # -------------------------------------------------
 
-    def _create_attack_boards(self):
+    def _create_platforms(self):
 
-        #
-        # Attack boards are always 2x2.
-        #
-        # Internal coordinates:
-        #
-        # A,B
-        # 1,2
-        #
-
-        attack_files = ("A", "B")
-
-        attack_ranks = (1, 2)
-
-        for board in ATTACK_BOARDS:
-
-            for file in attack_files:
-
-                for rank in attack_ranks:
-
-                    coord = Coordinate(board, file, rank)
-
-                    self.squares[coord] = Square(coord)
-
-    # ------------------------------------------------------
-
-    def _initialize_platform_positions(self):
-
-        #
-        # These are ONLY their initial locations.
-        #
-        # Exact movement comes later.
-        #
-
-        self.attack_platforms["WKL"] = AttackPlatform(
+        self.platforms["WKL"] = AttackPlatform(
             "WKL",
             "WL",
             "A",
             0,
         )
 
-        self.attack_platforms["WQL"] = AttackPlatform(
+        self.platforms["WQL"] = AttackPlatform(
             "WQL",
             "WL",
             "D",
             0,
         )
 
-        self.attack_platforms["BKL"] = AttackPlatform(
+        self.platforms["BKL"] = AttackPlatform(
             "BKL",
             "BL",
             "A",
             9,
         )
 
-        self.attack_platforms["BQL"] = AttackPlatform(
+        self.platforms["BQL"] = AttackPlatform(
             "BQL",
             "BL",
             "D",
             9,
         )
 
-    # ------------------------------------------------------
+    # -------------------------------------------------
 
     def get_square(self, coordinate: Coordinate) -> Square:
 
         return self.squares[coordinate]
 
-    # ------------------------------------------------------
+    # -------------------------------------------------
 
-    def is_valid_coordinate(self, coordinate: Coordinate) -> bool:
+    def all_squares(self):
 
-        return coordinate in self.squares
+        return self.squares.values()
 
-    # ------------------------------------------------------
+    # -------------------------------------------------
 
-    def get_piece(self, coordinate: Coordinate):
+    def all_platforms(self):
 
-        return self.squares[coordinate].piece
+        return self.platforms.values()
 
-    # ------------------------------------------------------
+    # -------------------------------------------------
 
-    def set_piece(self, coordinate: Coordinate, piece):
-
-        self.squares[coordinate].piece = piece
-
-    # ------------------------------------------------------
-
-    def clear_square(self, coordinate: Coordinate):
-
-        self.squares[coordinate].piece = None
-
-    # ------------------------------------------------------
-
-    def all_main_board_squares(self) -> List[Square]:
-
-        return [
-            square
-            for square in self.squares.values()
-            if square.coordinate.board in MAIN_BOARDS
-        ]
-
-    # ------------------------------------------------------
-
-    def all_attack_board_squares(self) -> List[Square]:
-
-        return [
-            square
-            for square in self.squares.values()
-            if square.coordinate.board in ATTACK_BOARDS
-        ]
-
-    # ------------------------------------------------------
-
-    def platform(self, name: str) -> AttackPlatform:
-
-        return self.attack_platforms[name]
-
-    # ------------------------------------------------------
-
-    def overlapping_main_squares(
+    def move_platform(
         self,
-        coordinate: Coordinate,
-    ) -> List[Coordinate]:
+        name: str,
+        host_board: str,
+        pin_file: str,
+        pin_rank: int,
+        rotate: bool = False,
+    ):
+
+        platform = self.platforms[name]
+
+        platform.host_board = host_board
+        platform.pin_file = pin_file
+        platform.pin_rank = pin_rank
+
+        if rotate:
+            platform.rotate()
+
+        platform.moved = True
+
+    # -------------------------------------------------
+
+    def overlaps(self, coordinate: Coordinate) -> List[Coordinate]:
         """
-        Returns every MAIN BOARD square
-        sharing this vertical column.
+        Returns every square currently sharing the same
+        vertical column.
 
-        Attack-board overlap depends on
-        platform position and will be added
-        later.
+        For now this only returns the three main-board
+        coordinates. Attack-platform overlap will be
+        added once platform geometry is implemented.
         """
 
-        if coordinate.board not in MAIN_BOARDS:
+        return coordinate.overlaps()
 
-            return []
-
-        return list(coordinate.overlaps())
-
-    # ------------------------------------------------------
-
-    def __len__(self):
-
-        return len(self.squares)
-
-    # ------------------------------------------------------
+    # -------------------------------------------------
 
     def __repr__(self):
 
         return (
             f"<Board "
-            f"{len(self.squares)} squares, "
-            f"{len(self.attack_platforms)} platforms>"
+            f"{len(self.squares)} main squares, "
+            f"{len(self.platforms)} platforms>"
         )
