@@ -156,7 +156,57 @@ class Board:
 
         return coordinate in self.squares
 
+    # -------------------------------------------------
 
+    def move_piece(
+        self,
+        start: Coordinate,
+        end: Coordinate,
+    ):
+        """
+        Move a piece from one square to another.
+
+        This does not check if the move is legal.
+        It only updates the board state.
+        """
+
+        if start not in self.squares:
+            raise ValueError(
+                f"Invalid starting square: {start}"
+            )
+
+        if end not in self.squares:
+            raise ValueError(
+                f"Invalid ending square: {end}"
+            )
+
+
+        piece = self.get_piece(start)
+
+
+        if piece is None:
+            raise ValueError(
+                f"No piece at {start}"
+            )
+
+
+        # Move piece
+        self.squares[end] = piece
+
+        # Empty old square
+        self.squares[start] = None
+
+
+    # -------------------------------------------------
+
+    def clear(self):
+        """
+        Remove all pieces from the board.
+        """
+
+        for coordinate in self.squares:
+
+            self.squares[coordinate] = None
     # -------------------------------------------------
 
     def all_squares(self):
