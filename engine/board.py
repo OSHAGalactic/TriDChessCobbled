@@ -166,8 +166,7 @@ class Board:
         """
         Move a piece from one square to another.
 
-        This does not check if the move is legal.
-        It only updates the board state.
+        This does not check legality.
         """
 
         if start not in self.squares:
@@ -190,14 +189,15 @@ class Board:
             )
 
 
-        # Move piece
+        # Update piece location
+        piece.position = end
+
+
+        # Move piece on board
         self.squares[end] = piece
 
-        # Empty old square
+        # Clear old square
         self.squares[start] = None
-
-
-    # -------------------------------------------------
 
     def clear(self):
         """
