@@ -1,13 +1,8 @@
 """
 renderer.py
 
-Pygame renderer for Star Trek Tri-D Chess.
-
-The renderer draws the current visual state.
-It does not contain game logic.
+Pygame renderer.
 """
-
-from __future__ import annotations
 
 import pygame
 
@@ -19,7 +14,9 @@ from gui.colors import (
 )
 
 
+
 class Renderer:
+
 
     def __init__(self, screen):
 
@@ -31,55 +28,16 @@ class Renderer:
         )
 
 
-    # -------------------------------------------------
-
     def draw(self, board, layout):
 
-        """
-        Draw the entire game view.
-        """
-
-        self.screen.fill(BACKGROUND)
-
-        self._draw_attack_boards(
-            layout
+        self.screen.fill(
+            BACKGROUND
         )
 
-        self._draw_main_boards(
-            layout
-        )
 
-        pygame.display.flip()
-
-
-    # -------------------------------------------------
-
-    def _draw_main_boards(self, layout):
-
-        """
-        Draw WL, NL, BL.
-
-        These are drawn after attack boards
-        so attack boards visually sit behind.
-        """
-
-        for name in (
-            "BL",
-            "NL",
-            "WL",
-        ):
-
-            visual = layout.get(name)
-
-            self._draw_board(
-                visual,
-                label=name,
-            )
-
-
-    # -------------------------------------------------
-
-    def _draw_attack_boards(self, layout):
+        #
+        # Attack boards first
+        #
 
         for name in (
             "BKL",
@@ -88,98 +46,95 @@ class Renderer:
             "WQL",
         ):
 
-            visual = layout.get(name)
-
-            self._draw_board(
-                visual,
-                label=name,
-                attack=True,
+            self.draw_board(
+                layout.get(name),
+                True,
             )
 
 
-    # -------------------------------------------------
+        #
+        # Main boards second
+        #
 
-    def _draw_board(
+        for name in (
+            "BL",
+            "NL",
+            "WL",
+        ):
+
+            self.draw_board(
+                layout.get(name),
+                False,
+            )
+
+
+        pygame.display.flip()
+
+
+
+    def draw_board(
         self,
         visual,
-        label=None,
         attack=False,
     ):
 
-        rect = visual.rect
-
-        pygame_rect = pygame.Rect(
-            rect.x,
-            rect.y,
-            rect.width,
-            rect.height,
+        rect = pygame.Rect(
+            visual.rect.x,
+            visual.rect.y,
+            visual.rect.width,
+            visual.rect.height,
         )
 
 
         pygame.draw.rect(
             self.screen,
             visual.color,
-            pygame_rect,
+            rect,
         )
-
-
-        if attack:
-
-            border_width = 3
-
-        else:
-
-            border_width = 5
 
 
         pygame.draw.rect(
             self.screen,
-            (0, 0, 0),
-            pygame_rect,
-            border_width,
+            (0,0,0),
+            rect,
+            3 if attack else 5,
         )
 
 
-        self._draw_squares(
-            visual,
+        self.draw_squares(
+            visual
         )
 
 
-        if label:
-
-            self._draw_label(
-                label,
-                rect.x,
-                rect.y,
-            )
+        label = self.font.render(
+            visual.name,
+            True,
+            TEXT,
+        )
 
 
-    # -------------------------------------------------
+        self.screen.blit(
+            label,
+            (
+                visual.rect.x + 5,
+                visual.rect.y + 5,
+            ),
+        )
 
-    def _draw_squares(self, visual):
+
+
+    def draw_squares(self, visual):
 
         size = visual.size
 
-        tile_width = visual.rect.width / size
-        tile_height = visual.rect.height / size
+        tile_w = visual.rect.width / size
+
+        tile_h = visual.rect.height / size
 
 
         for row in range(size):
 
             for col in range(size):
-
-                x = (
-                    visual.rect.x
-                    +
-                    col * tile_width
-                )
-
-                y = (
-                    visual.rect.y
-                    +
-                    row * tile_height
-                )
-
 
                 color = (
                     LIGHT_SQUARE
@@ -194,33 +149,9 @@ class Renderer:
                     self.screen,
                     color,
                     pygame.Rect(
-                        x,
-                        y,
-                        tile_width,
-                        tile_height,
+                        visual.rect.x + col * tile_w,
+                        visual.rect.y + row * tile_h,
+                        tile_w,
+                        tile_h,
                     ),
                 )
-
-
-    # -------------------------------------------------
-
-    def _draw_label(
-        self,
-        text,
-        x,
-        y,
-    ):
-
-        surface = self.font.render(
-            text,
-            True,
-            TEXT,
-        )
-
-        self.screen.blit(
-            surface,
-            (
-                x + 5,
-                y + 5,
-            ),
-        )
