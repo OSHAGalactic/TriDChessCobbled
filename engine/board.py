@@ -198,7 +198,22 @@ class Board:
 
         # Clear old square
         self.squares[start] = None
+    # -------------------------------------------------
 
+    def make_move(
+        self,
+        move,
+    ):
+        """
+        Execute a Move object.
+
+        Legality checking will be added later.
+        """
+
+        self.move_piece(
+            move.start,
+            move.end,
+        )
     def clear(self):
         """
         Remove all pieces from the board.
