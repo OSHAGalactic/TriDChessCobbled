@@ -37,7 +37,7 @@ class Game:
         Returns True if successful.
         """
 
-
+        
         piece = self.board.get_piece(
             move.start
         )
@@ -68,6 +68,18 @@ class Game:
 
             return False
 
+
+
+            # Check if destination has friendly piece
+
+        target = self.board.get_piece(
+            move.end
+        )
+
+        if target is not None:
+
+            if target.color == piece.color:
+                return False
 
 
         # Perform move
