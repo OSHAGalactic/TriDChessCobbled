@@ -191,7 +191,7 @@ class Board:
 
         # Update piece location
         piece.position = end
-
+        piece.has_moved = True
 
         # Move piece on board
         self.squares[end] = piece

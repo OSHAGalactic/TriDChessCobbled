@@ -36,16 +36,10 @@ class Color(Enum):
 @dataclass
 class Piece:
 
-    """
-    Base chess piece.
-
-    Movement logic will be added later.
-    """
-
     piece_type: PieceType
     color: Color
     position: Coordinate
-
+    has_moved: bool = False
 
     def __repr__(self):
 
