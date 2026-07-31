@@ -18,6 +18,7 @@ from engine.piece import PieceType
 
 
 # All playable boards
+
 PLAYABLE_BOARDS = (
     "WL",
     "NL",
@@ -31,6 +32,7 @@ PLAYABLE_BOARDS = (
 
 
 # Coordinate ranges for each board
+
 BOARD_COORDINATES = {
 
     "WL": (
@@ -171,6 +173,9 @@ class Board:
         self,
         coordinate: Coordinate,
     ):
+        """
+        Remove a piece from a square.
+        """
 
         self.squares[coordinate] = None
 
@@ -190,11 +195,14 @@ class Board:
         """
 
         if start not in self.squares:
+
             raise ValueError(
                 f"Invalid starting square: {start}"
             )
 
+
         if end not in self.squares:
+
             raise ValueError(
                 f"Invalid ending square: {end}"
             )
@@ -204,23 +212,22 @@ class Board:
 
 
         if piece is None:
+
             raise ValueError(
                 f"No piece at {start}"
             )
 
 
         #
-        # Capture handling:
-        # overwrite destination
+        # Move piece
         #
 
         self.squares[end] = piece
-
         self.squares[start] = None
 
 
         #
-        # Update piece state
+        # Update piece data
         #
 
         piece.position = end
@@ -237,8 +244,30 @@ class Board:
         """
         Execute a Move object.
 
-        Legality checking will be added later.
+        Handles:
+        - captures
+        - moving pieces
+
+        Does not handle:
+        - legality
+        - turns
         """
+
+
+        #
+        # Remove captured piece
+        #
+
+        if move.captured is not None:
+
+            self.remove_piece(
+                move.end
+            )
+
+
+        #
+        # Move attacking piece
+        #
 
         self.move_piece(
             move.start,
@@ -293,19 +322,15 @@ class Board:
 
 
     # -------------------------------------------------
-        # -------------------------------------------------
 
     def copy(self):
         """
-        Create a copy of the current board state.
+        Create an independent copy of the board.
 
         Used for:
         - move simulation
         - check detection
         - legality testing
-
-        The copied board does not share pieces
-        with the original board.
         """
 
         new_board = Board()
@@ -338,9 +363,13 @@ class Board:
 
         return new_board
 
+
+
+    # -------------------------------------------------
+
     def clear(self):
         """
-        Remove all pieces from the board.
+        Remove all pieces.
         """
 
         for coordinate in self.squares:

@@ -30,6 +30,14 @@ def place_piece(
         rank,
     )
 
+
+    if board.get_piece(coordinate) is not None:
+
+        raise ValueError(
+            f"Square already occupied: {coordinate}"
+        )
+
+
     board.set_piece(
         coordinate,
         Piece(

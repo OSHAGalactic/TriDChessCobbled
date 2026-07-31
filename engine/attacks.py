@@ -17,12 +17,19 @@ It does not:
 from engine.piece import PieceType
 
 from engine.knight import knight_moves
+from engine.pawn import pawn_attacks as generate_pawn_attacks
+from engine.raycaster import RayResult
 
 from engine.sliding import (
     rook_moves,
     bishop_moves,
 )
 
+
+
+# -------------------------------------------------
+# Pawn attacks
+# -------------------------------------------------
 
 
 def pawn_attacks(
@@ -32,16 +39,26 @@ def pawn_attacks(
     """
     Return squares attacked by a pawn.
 
-    Pawn movement and pawn attacks are different.
-
-    TODO:
-        Add Tri-D Chess pawn attack direction.
+    Converted into RayResult objects so
+    all attack generators share the same interface.
     """
 
-    attacks = []
+    return [
+        RayResult(
+            coordinate
+        )
 
-    return attacks
+        for coordinate in generate_pawn_attacks(
+            board,
+            pawn,
+        )
+    ]
 
+
+
+# -------------------------------------------------
+# Knight attacks
+# -------------------------------------------------
 
 
 def knight_attacks(
@@ -58,6 +75,11 @@ def knight_attacks(
         knight,
     )
 
+
+
+# -------------------------------------------------
+# King attacks
+# -------------------------------------------------
 
 
 def king_attacks(
@@ -78,6 +100,11 @@ def king_attacks(
         king,
     )
 
+
+
+# -------------------------------------------------
+# Sliding attacks
+# -------------------------------------------------
 
 
 def sliding_attacks(
@@ -125,3 +152,51 @@ def sliding_attacks(
 
 
     return []
+
+
+
+# -------------------------------------------------
+# Universal attack dispatcher
+# -------------------------------------------------
+
+
+def attacks(
+    board,
+    piece,
+):
+    """
+    Return all squares attacked by a piece.
+
+    Used by:
+    - check detection
+    - king safety
+    """
+
+    if piece.piece_type == PieceType.PAWN:
+
+        return pawn_attacks(
+            board,
+            piece,
+        )
+
+
+    if piece.piece_type == PieceType.KNIGHT:
+
+        return knight_attacks(
+            board,
+            piece,
+        )
+
+
+    if piece.piece_type == PieceType.KING:
+
+        return king_attacks(
+            board,
+            piece,
+        )
+
+
+    return sliding_attacks(
+        board,
+        piece,
+    )

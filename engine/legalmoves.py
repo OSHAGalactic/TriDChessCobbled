@@ -5,6 +5,7 @@ Filters raw piece movement into legal chess moves.
 
 This file handles:
 - occupancy filtering
+- move creation
 - move simulation
 - king safety pruning
 
@@ -17,6 +18,8 @@ It does not handle:
 
 from engine.piece import PieceType
 
+from engine.move import Move
+
 from engine.check import is_in_check
 
 from engine.sliding import (
@@ -26,6 +29,7 @@ from engine.sliding import (
 
 from engine.knight import knight_moves
 from engine.king import king_moves
+from engine.pawn import pawn_moves
 
 
 
@@ -38,6 +42,15 @@ def raw_moves(
     - occupancy rules
     - king safety
     """
+
+
+    if piece.piece_type == PieceType.PAWN:
+
+        return pawn_moves(
+            board,
+            piece,
+        )
+
 
     if piece.piece_type == PieceType.ROOK:
 
@@ -90,6 +103,34 @@ def raw_moves(
 
 
 
+# -------------------------------------------------
+
+
+def get_destination(
+    move,
+):
+    """
+    Extract destination coordinate
+    from either:
+    - Move
+    - RayResult
+    """
+
+    if isinstance(
+        move,
+        Move,
+    ):
+
+        return move.end
+
+
+    return move.coordinate
+
+
+
+# -------------------------------------------------
+
+
 def occupancy_filter(
     board,
     piece,
@@ -98,8 +139,8 @@ def occupancy_filter(
     """
     Remove moves blocked by friendly pieces.
 
-    Enemy occupied squares remain as
-    possible captures.
+    Enemy occupied squares remain
+    as captures.
     """
 
     legal = []
@@ -107,8 +148,13 @@ def occupancy_filter(
 
     for move in moves:
 
+        destination = get_destination(
+            move
+        )
+
+
         target = board.get_piece(
-            move.coordinate
+            destination
         )
 
 
@@ -119,7 +165,7 @@ def occupancy_filter(
         if target is None:
 
             legal.append(
-                move
+                destination
             )
 
             continue
@@ -127,20 +173,22 @@ def occupancy_filter(
 
 
         #
-        # Enemy piece:
-        # capture allowed
+        # Enemy capture
         #
 
         if target.color != piece.color:
 
             legal.append(
-                move
+                destination
             )
 
 
 
     return legal
 
+
+
+# -------------------------------------------------
 
 
 def legal_moves(
@@ -151,6 +199,9 @@ def legal_moves(
     Return only moves that:
     - obey occupancy rules
     - leave the player's king safe
+
+    Returns:
+        list[Move]
     """
 
     legal = []
@@ -162,29 +213,53 @@ def legal_moves(
     )
 
 
-    moves = occupancy_filter(
-        board,
-        piece,
-        moves,
-    )
+    #
+    # Pawns already return complete Move objects.
+    #
+    # Sliding pieces, knights, and kings
+    # return RayResults.
+    #
+
+    if piece.piece_type == PieceType.PAWN:
+
+        candidates = moves
+
+
+    else:
+
+        destinations = occupancy_filter(
+            board,
+            piece,
+            moves,
+        )
+
+
+        candidates = [
+            Move(
+                piece.position,
+                destination,
+                piece,
+                board.get_piece(destination),
+            )
+
+            for destination in destinations
+        ]
 
 
 
-    for move in moves:
+    for move in candidates:
 
 
         test_board = board.copy()
 
 
-        test_board.move_piece(
-            piece.position,
-            move.coordinate,
+        test_board.make_move(
+            move
         )
 
 
         #
-        # Ignore incomplete test boards
-        # without kings.
+        # Ignore incomplete boards
         #
 
         king = test_board.find_king(
@@ -203,8 +278,7 @@ def legal_moves(
 
 
         #
-        # Keep only moves that do
-        # not expose the king.
+        # King safety
         #
 
         if not is_in_check(
