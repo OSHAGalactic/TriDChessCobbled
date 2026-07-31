@@ -10,9 +10,11 @@ It does not contain rendering logic.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, Optional
+from typing import Dict
 
 from engine.coordinate import Coordinate
+from engine.piece import PieceType
+
 
 
 # All playable boards
@@ -27,28 +29,25 @@ PLAYABLE_BOARDS = (
 )
 
 
+
 # Coordinate ranges for each board
 BOARD_COORDINATES = {
 
-    # White main board
     "WL": (
         ("A", "B", "C", "D"),
         range(1, 5),
     ),
 
-    # Neutral board
     "NL": (
         ("A", "B", "C", "D"),
         range(3, 7),
     ),
 
-    # Black main board
     "BL": (
         ("A", "B", "C", "D"),
         range(5, 9),
     ),
 
-    # White attack boards
     "WKL": (
         ("Z", "A"),
         range(0, 2),
@@ -59,7 +58,6 @@ BOARD_COORDINATES = {
         range(0, 2),
     ),
 
-    # Black attack boards
     "BKL": (
         ("Z", "A"),
         range(8, 10),
@@ -70,6 +68,7 @@ BOARD_COORDINATES = {
         range(8, 10),
     ),
 }
+
 
 
 @dataclass
@@ -87,6 +86,7 @@ class Board:
     def __post_init__(self):
 
         self.create_empty_board()
+
 
 
     # -------------------------------------------------
@@ -114,6 +114,18 @@ class Board:
                     self.squares[coordinate] = None
 
 
+
+    # -------------------------------------------------
+
+    def contains(
+        self,
+        coordinate: Coordinate,
+    ):
+
+        return coordinate in self.squares
+
+
+
     # -------------------------------------------------
 
     def get_piece(
@@ -124,6 +136,21 @@ class Board:
         return self.squares.get(
             coordinate
         )
+
+
+
+    # -------------------------------------------------
+
+    def add_piece(
+        self,
+        piece,
+    ):
+        """
+        Place a piece on the board.
+        """
+
+        self.squares[piece.position] = piece
+
 
 
     # -------------------------------------------------
@@ -137,6 +164,7 @@ class Board:
         self.squares[coordinate] = piece
 
 
+
     # -------------------------------------------------
 
     def remove_piece(
@@ -147,14 +175,6 @@ class Board:
         self.squares[coordinate] = None
 
 
-    # -------------------------------------------------
-
-    def contains(
-        self,
-        coordinate: Coordinate,
-    ):
-
-        return coordinate in self.squares
 
     # -------------------------------------------------
 
@@ -189,15 +209,25 @@ class Board:
             )
 
 
-        # Update piece location
+        #
+        # Capture handling:
+        # overwrite destination
+        #
+
+        self.squares[end] = piece
+
+        self.squares[start] = None
+
+
+        #
+        # Update piece state
+        #
+
         piece.position = end
         piece.has_moved = True
 
-        # Move piece on board
-        self.squares[end] = piece
 
-        # Clear old square
-        self.squares[start] = None
+
     # -------------------------------------------------
 
     def make_move(
@@ -214,6 +244,100 @@ class Board:
             move.start,
             move.end,
         )
+
+
+
+    # -------------------------------------------------
+
+    def find_king(
+        self,
+        color,
+    ):
+        """
+        Find a king of the given color.
+        """
+
+        for piece in self.squares.values():
+
+            if piece is None:
+                continue
+
+
+            if (
+                piece.piece_type == PieceType.KING
+                and piece.color == color
+            ):
+
+                return piece
+
+
+        return None
+
+
+
+    # -------------------------------------------------
+
+    def all_pieces(self):
+
+        """
+        Return every piece currently
+        on the board.
+        """
+
+        return [
+            piece
+            for piece in self.squares.values()
+            if piece is not None
+        ]
+
+
+
+    # -------------------------------------------------
+        # -------------------------------------------------
+
+    def copy(self):
+        """
+        Create a copy of the current board state.
+
+        Used for:
+        - move simulation
+        - check detection
+        - legality testing
+
+        The copied board does not share pieces
+        with the original board.
+        """
+
+        new_board = Board()
+
+
+        for coordinate, piece in self.squares.items():
+
+            if piece is None:
+
+                continue
+
+
+            copied_piece = type(piece)(
+                piece.piece_type,
+                piece.color,
+                coordinate,
+            )
+
+
+            copied_piece.has_moved = (
+                piece.has_moved
+            )
+
+
+            new_board.set_piece(
+                coordinate,
+                copied_piece,
+            )
+
+
+        return new_board
+
     def clear(self):
         """
         Remove all pieces from the board.
@@ -222,11 +346,15 @@ class Board:
         for coordinate in self.squares:
 
             self.squares[coordinate] = None
+
+
+
     # -------------------------------------------------
 
     def all_squares(self):
 
         return self.squares.keys()
+
 
 
     # -------------------------------------------------

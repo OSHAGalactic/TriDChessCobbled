@@ -3,11 +3,18 @@ movement.py
 
 Contains Tri-D Chess movement rules.
 
-This file determines whether a piece can move.
-It does not change board state.
+This file determines whether a piece can move
+from one square to another.
+
+It does not:
+- generate all possible moves
+- change board state
+- check king safety
 """
 
+
 from engine.piece import Color, PieceType
+
 
 
 def can_move(
@@ -24,7 +31,56 @@ def can_move(
             destination,
         )
 
+
     return False
+
+
+
+def can_capture(
+    board,
+    piece,
+    destination,
+):
+    """
+    Returns True if the piece may capture
+    an enemy piece on the destination square.
+    """
+
+    target = board.get_piece(
+        destination
+    )
+
+
+    if target is None:
+
+        return False
+
+
+    return target.color != piece.color
+
+
+
+def is_blocked(
+    board,
+    destination,
+    color,
+):
+    """
+    Returns True if a friendly piece
+    occupies the destination.
+    """
+
+    target = board.get_piece(
+        destination
+    )
+
+
+    if target is None:
+
+        return False
+
+
+    return target.color == color
 
 
 
@@ -37,7 +93,9 @@ def pawn_can_move(
     start = pawn.position
 
 
-    # White moves upward through ranks
+    #
+    # White moves upward
+    #
 
     if pawn.color == Color.WHITE:
 
@@ -50,7 +108,10 @@ def pawn_can_move(
         return destination.rank == start.rank + 1
 
 
+
+    #
     # Black moves downward
+    #
 
     else:
 
